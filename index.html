@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pronos Foot</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);--bg:#f6f7f4;--card:#fff;--tx:#14201a;--mu:#66736b;--ac:#1a9c5b;--ln:#e3e8e4;--bad:#d64545;--on:#fff}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1511;--card:#17211b;--tx:#eaf1ec;--mu:#92a198;--ac:#34c27a;--ln:#26332b;--bad:#ee6b6b;--on:#06130c}}
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,sans-serif;padding:14px 14px 150px}
+.top{display:flex;justify-content:space-between;align-items:center}h1{font-size:20px;margin:0}
+.bal{background:var(--ac);color:var(--on);font-weight:700;padding:6px 12px;border-radius:20px;font-size:15px}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:12px 0}.tabs button,.seg button{border:0;background:var(--card);color:var(--tx);padding:8px 13px;border-radius:18px;font-size:14px;white-space:nowrap}
+.tabs button.on,.seg button.on{background:var(--ac);color:var(--on);font-weight:600}
+.card{background:var(--card);border-radius:14px;padding:12px;margin-bottom:10px}.date{font-size:12px;color:var(--mu)}
+.t{display:flex;justify-content:space-between;font-weight:600;margin:5px 0 8px}
+.g{display:grid;gap:6px;margin-top:6px}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
+.o{border:1px solid var(--ln);background:none;color:var(--tx);border-radius:10px;padding:7px 4px;font-size:13px;display:flex;flex-direction:column;align-items:center}
+.o small{color:var(--mu);font-size:11px}.o b{font-size:15px}.o.on{background:var(--ac);border-color:var(--ac);color:var(--on)}.o.on small{color:var(--on)}
+.sl{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--ln);padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 16px #0003;max-height:55vh;overflow:auto}
+.leg{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}.leg span:last-child{font-weight:700}
+.seg{display:flex;gap:6px;margin:8px 0}.seg button{background:var(--bg)}
+input{width:90px;font-size:16px;padding:7px;border-radius:8px;border:1px solid var(--ln);background:var(--bg);color:var(--tx)}
+.row{display:flex;justify-content:space-between;align-items:center;margin:6px 0}
+.go{width:100%;border:0;background:var(--ac);color:var(--on);font-weight:700;padding:12px;border-radius:12px;font-size:16px}.go:disabled{opacity:.4}
+.st{font-weight:700}.W{color:var(--ac)}.L{color:var(--bad)}.P{color:var(--mu)}
+.sim{width:100%;border:1px solid var(--ac);background:none;color:var(--ac);font-weight:600;padding:10px;border-radius:12px;margin-bottom:10px}
+.bar{display:flex;height:9px;border-radius:5px;overflow:hidden;margin:4px 0}.bar i{display:block}.b1{background:var(--ac)}.bn{background:var(--ln)}.b2{background:#4a7bd8}.pc{display:flex;justify-content:space-between;font-size:12px;color:var(--mu)}.pk{font-size:15px;margin:10px 0 2px}.pk b{color:var(--ac)}.bd{display:inline-block;font-size:11px;border-radius:8px;padding:2px 8px;background:var(--bg);color:var(--mu);margin-left:6px}.why{margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.5}.why li{margin-bottom:3px}.ad.on{background:var(--ac);color:var(--on)}.o.on{box-shadow:0 0 0 2px var(--ac);font-weight:700}.ad{width:100%;margin-top:8px;border:1px solid var(--ac);background:none;color:var(--ac);font-weight:600;padding:8px;border-radius:10px}.note{font-size:12px;color:var(--mu);line-height:1.4;margin-top:14px}
+</style></head><body>
+<div class="top"><h1>⚽ Pronos Foot</h1><div class="bal" id="bal"></div></div>
+<div class="tabs" id="tabs"></div>
+<div id="main"></div>
+<div class="sl" id="slip" hidden></div>
+<script>
+let D={};
+const MG=0.94,sel=[];let lg="",view="m",mode="combo",stake=2,res={};
+const td=new Date().toISOString().slice(0,10);
+let S={d:td,bal:20,bets:[],res:{}};
+try{const r=JSON.parse(localStorage.getItem("pf2"));if(r)S=r}catch(e){}
+S.d=td;
+const save=()=>{try{localStorage.setItem("pf2",JSON.stringify(S))}catch(e){}};
+const f=n=>n.toFixed(2).replace(".",",");
+const od=p=>Math.max(1.01,100/p*MG);
+function mk(m){const[h,a,t,p1,pn,p2]=m;return[
+["1","Victoire "+h,od(p1)],["N","Nul",od(pn)],["2","Victoire "+a,od(p2)],
+["1N",h+" ou nul",od(p1+pn)],["N2",a+" ou nul",od(pn+p2)],["12","Pas de nul",od(p1+p2)],
+["D1","Remb. si nul : "+h,od(p1/(p1+p2)*100)],["D2","Remb. si nul : "+a,od(p2/(p1+p2)*100)]]}
+const key=(l,m)=>l+"|"+m[0]+"|"+m[1];
+function tog(k,m,s,l,o){const i=sel.findIndex(x=>x.k===k);
+if(i>-1){const same=sel[i].s===s;sel.splice(i,1);if(same)return render()}
+sel.push({k,h:m[0],a:m[1],s,l,o});render()}
+function render(){
+refill();document.getElementById("bal").textContent=f(S.bal)+" €";
+document.getElementById("tabs").innerHTML=Object.keys(D).map(x=>`<button class="${view!="b"&&view!="t"&&x==lg?"on":""}" onclick="lg='${x}';if(view=='b'||view=='t')view='m';render()">${x}</button>`).join("")+`<button class="${view=="b"?"on":""}" onclick="view='b';render()">Mes paris (${S.bets.length})</button>`;
+const M=document.getElementById("main");
+if(view=="b"){M.innerHTML=bets();slip();return}
+if(view=="p"){M.innerHTML=sg()+pron();slip();return}
+if(view=="t"){M.innerHTML=sg()+topPicks();slip();return}
+M.innerHTML=sg()+D[lg].map(m=>{const k=key(lg,m),c=sel.find(x=>x.k===k);const os=mk(m);
+const b=(x,cls)=>`<button class="o ${c&&c.s==x[0]?"on":""}" onclick='tog(${JSON.stringify(k)},${JSON.stringify(m)},"${x[0]}",${JSON.stringify(x[1])},${x[2]})'><small>${x[1]}</small><b>${f(x[2])}</b></button>`;
+return `<div class="card"><div class="date">${m[2]}</div><div class="t"><span>${m[0]}</span><span>${m[1]}</span></div>
+<div class="g g3">${os.slice(0,3).map(b).join("")}</div><div class="g g3">${os.slice(3,6).map(b).join("")}</div><div class="g g2">${os.slice(6).map(b).join("")}</div></div>`}).join("")+
+`<p class="note">Cotes calculées à partir des probabilités du modèle statistique (marge de 6 %). Ce ne sont pas les cotes réelles d’un bookmaker. Argent fictif : 20 € offerts à chaque fois que ton solde tombe à zéro, et tes gains s’accumulent.</p>`;
+slip()}
+function slip(){const e=document.getElementById("slip");if(!sel.length){e.hidden=true;return}
+e.hidden=false;const tot=sel.reduce((a,x)=>a*x.o,1),n=mode=="combo"||sel.length==1?1:sel.length;
+const cost=stake*n,gain=mode=="combo"||sel.length==1?stake*tot:sel.reduce((a,x)=>a+stake*x.o,0);
+e.innerHTML=`<div class="seg"><button class="${mode=="combo"?"on":""}" onclick="mode='combo';render()">Combiné</button><button class="${mode=="simple"?"on":""}" onclick="mode='simple';render()">Simples</button></div>
+${sel.map(x=>`<div class="leg"><span>${x.h} - ${x.a}<br><small>${x.l}</small></span><span>${f(x.o)}</span></div>`).join("")}
+<div class="row"><span>Mise${n>1?" (par pari)":""}</span><input type="number" min="0.5" step="0.5" value="${stake}" inputmode="decimal" oninput="setStake(this.value)"></div>
+<div class="row"><span>Cote totale ${mode=="combo"?f(tot):""}</span><b id="gn">Gain possible ${f(gain)} €</b></div>
+<button class="go" id="gb" ${cost>S.bal?"disabled":""} onclick="place()">${cost>S.bal?"Solde insuffisant":"Valider · "+f(cost)+" €"}</button>`}
+function refill(){if(S.bal<0.01){S.bal=20;save()}}
+function setStake(v){stake=Math.max(0,parseFloat(String(v).replace(",","."))||0);const single=mode=="simple"&&sel.length>1,tot=sel.reduce((a,x)=>a*x.o,1),n=single?sel.length:1,cost=stake*n,gain=single?sel.reduce((a,x)=>a+stake*x.o,0):stake*tot;document.getElementById("gn").textContent="Gain possible "+f(gain)+" €";const g=document.getElementById("gb");g.disabled=cost>S.bal||stake<=0;g.textContent=cost>S.bal?"Solde insuffisant":stake<=0?"Entre une mise":"Valider · "+f(cost)+" €"}
+function place(){const single=mode=="simple"&&sel.length>1;
+const L=single?sel.map(x=>[x]):[sel.slice()];
+for(const legs of L){if(stake>S.bal||stake<=0)break;S.bal=+(S.bal-stake).toFixed(2);S.bets.unshift({id:Date.now()+Math.random(),stake,legs,st:"P"})}
+sel.length=0;save();view="b";render()}
+function out(x){const r=S.res[x.k];if(!r)return null;
+const w={"1":r=="1","N":r=="N","2":r=="2","1N":r!="2","N2":r!="1","12":r!="N","D1":r=="1","D2":r=="2"}[x.s];
+if((x.s=="D1"||x.s=="D2")&&r=="N")return"V";return w?"W":"L"}
+function settle(){for(const b of S.bets){if(b.st!="P")continue;const o=b.legs.map(out);if(o.includes(null)&&!o.includes("L"))continue;
+if(o.includes("L")){b.st="L";continue}
+const odd=b.legs.reduce((a,x,i)=>a*(o[i]=="V"?1:x.o),1);b.st="W";b.gain=+(b.stake*odd).toFixed(2);S.bal=+(S.bal+b.gain).toFixed(2)}save()}
+function sim(){const ms={};S.bets.filter(b=>b.st=="P").forEach(b=>b.legs.forEach(x=>{if(!S.res[x.k])ms[x.k]=1}));
+for(const k in ms){const[l,h,a]=k.split("|"),m=(D[l]||[]).find(z=>z[0]==h&&z[1]==a)||[0,0,0,34,33,33],r=Math.random()*(m[3]+m[4]+m[5]);S.res[k]=r<m[3]?"1":r<m[3]+m[4]?"N":"2"}
+settle();render()}
+let F={};
+const em=s=>s.split("").map(c=>({V:"🟢",N:"🟡",D:"🔴"})[c]).join("");
+function sg(){return `<div class="seg"><button class="${view=="m"?"on":""}" onclick="view='m';render()">Cotes</button><button class="${view=="p"?"on":""}" onclick="view='p';render()">Pronostics</button><button class="${view=="t"?"on":""}" onclick="view='t';render()">Top sûrs</button></div>`}
+function pron(){return D[lg].slice().sort((a,b)=>Math.max(b[3],b[4],b[5])-Math.max(a[3],a[4],a[5])).map(m=>{
+const[h,a,t,p1,pn,p2]=m,home=p1>=p2,fav=home?h:a,dog=home?a:h,pf=home?p1:p2,pd=home?p2:p1,nul=pn>=pf;
+const pick=nul?"Match nul":"Victoire "+fav,s=nul?"N":home?"1":"2",o=od(nul?pn:pf);
+const cf=pf>=60?"Confiance élevée":pf>=45?"Confiance moyenne":"Match ouvert";
+const w=[home?`${fav} joue à domicile : l’avantage du terrain pèse dans le modèle.`:`${fav} est favori même en déplaçant chez ${dog}.`,
+`Le modèle lui donne ${pf}% de chances de gagner contre ${pd}% pour ${dog}, soit ${Math.round(pf-pd)} points d’écart.`];
+if(F[fav]&&F[dog])w.push(`Forme récente : ${fav} ${em(F[fav])} · ${dog} ${em(F[dog])}`);else if(F[fav])w.push(`Forme récente de ${fav} : ${em(F[fav])}`);
+w.push(pn>=28?`Risque de nul élevé (${pn}%) : le résultat peut rester serré.`:pn<=15?`Nul peu probable (${pn}%) : une équipe devrait faire la différence.`:`Le nul reste possible (${pn}%).`);
+if(pd<15)w.push(`${dog} a très peu de chances de gagner (${pd}%).`);else if(pf<45)w.push("Aucune équipe ne domine nettement : pronostic à prendre avec prudence.");
+const k=key(lg,m);
+return `<div class="card"><div class="date">${t}</div><div class="t"><span>${h}</span><span>${a}</span></div>
+<div class="bar"><i class="b1" style="width:${p1}%"></i><i class="bn" style="width:${pn}%"></i><i class="b2" style="width:${p2}%"></i></div>
+<div class="pc"><span>${p1}%</span><span>Nul ${pn}%</span><span>${p2}%</span></div>
+<div class="pk">Pronostic : <b>${pick}</b><span class="bd">${cf}</span></div>
+<ul class="why">${w.map(x=>`<li>${x}</li>`).join("")}</ul>
+<button class="ad ${sel.find(x=>x.k===k&&x.s===s)?"on":""}" onclick='tog(${JSON.stringify(k)},${JSON.stringify(m)},"${s}",${JSON.stringify(pick)},${o})'>${sel.find(x=>x.k===k&&x.s===s)?"✓ Ajouté au coupon · retirer":"Ajouter au coupon · cote "+f(o)}</button></div>`}).join("")+`<p class="note">Les raisons s’appuient sur les probabilités du modèle statistique et sur les derniers résultats connus (🟢 victoire, 🟡 nul, 🔴 défaite). Un pronostic n’est jamais une certitude.</p>`}
+function topPicks(){const L=[];for(const l in D)D[l].forEach(m=>{const mx=Math.max(m[3],m[4],m[5]);if(mx>=60)L.push([l,m,mx])});L.sort((a,b)=>b[2]-a[2]);
+return `<p class="note" style="margin:0 0 10px">Matchs où le modèle donne au moins 60 % à un résultat, tous championnats confondus.</p>`+L.map(([l,m,mx])=>{const[h,a,t,p1,pn,p2]=m,s=mx==p1?"1":mx==pn?"N":"2",pick=s=="1"?"Victoire "+h:s=="2"?"Victoire "+a:"Nul",o=od(mx),k=key(l,m),on=sel.find(x=>x.k===k&&x.s===s);
+return `<div class="card"><div class="date">${l} · ${t}</div><div class="t"><span>${h}</span><span>${a}</span></div><div class="pk"><b>${pick}</b> · ${mx}%<span class="bd">cote ${f(o)}</span></div><button class="ad ${on?"on":""}" onclick='tog(${JSON.stringify(k)},${JSON.stringify(m)},"${s}",${JSON.stringify(pick)},${o})'>${on?"✓ Ajouté · retirer":"Ajouter au coupon"}</button></div>`}).join("")+`<button class="sim" onclick="addAll()">Tout ajouter au coupon (combiné)</button>`}
+function addAll(){for(const l in D)D[l].forEach(m=>{const mx=Math.max(m[3],m[4],m[5]);if(mx<60)return;const s=mx==m[3]?"1":mx==m[4]?"N":"2",k=key(l,m);if(!sel.find(x=>x.k===k))sel.push({k,h:m[0],a:m[1],s,l:s=="1"?"Victoire "+m[0]:s=="2"?"Victoire "+m[1]:"Nul",o:od(mx)})});mode="combo";render()}
+function bets(){const p=S.bets.some(b=>b.st=="P");
+const lbl={W:"Gagné",L:"Perdu",P:"En cours"};
+return (p?`<button class="sim" onclick="sim()">🎲 Simuler les résultats des matchs</button>`:"")+
+(S.bets.length?S.bets.map(b=>{const tot=b.legs.reduce((a,x)=>a*x.o,1);
+return `<div class="card"><div class="row"><b>${b.legs.length>1?"Combiné "+b.legs.length:"Simple"}</b><span class="st ${b.st}">${lbl[b.st]}${b.st=="W"?" +"+f(b.gain)+" €":""}</span></div>
+${b.legs.map(x=>{const o=out(x),r=S.res[x.k];return `<div class="leg"><span>${x.h} - ${x.a}<br><small>${x.l}${r?" · résultat : "+({"1":x.h,"N":"nul","2":x.a})[r]:""}</small></span><span class="${o=="W"?"W":o=="L"?"L":"P"}">${f(x.o)}</span></div>`}).join("")}
+<div class="row"><small>Mise ${f(b.stake)} € · cote ${f(tot)}</small></div></div>`}).join(""):`<p class="note">Aucun pari pour l’instant. Choisis des cotes dans un championnat.</p>`)+
+`<p class="note">Les résultats sont tirés au hasard selon les probabilités du modèle, pour jouer sans attendre les vrais matchs.</p>`}
+document.getElementById("main").innerHTML='<p class="note">Chargement des matchs…</p>';
+fetch("/api/matches").then(r=>r.json()).then(j=>{
+for(const k in j.matches)if(j.matches[k].length)D[k]=j.matches[k];
+F=j.form||{};lg=Object.keys(D)[0]||"";
+if(!lg)return document.getElementById("main").innerHTML='<p class="note">Aucun match pour le moment. Vérifie la clé API du serveur.</p>';
+render();
+if(j.updated)document.getElementById("main").insertAdjacentHTML("afterend",'<p class="note">Matchs mis à jour le '+new Date(j.updated).toLocaleString("fr-FR")+'</p>');
+}).catch(()=>{document.getElementById("main").innerHTML='<p class="note">Impossible de charger les matchs.</p>'});
+</script></body></html>
